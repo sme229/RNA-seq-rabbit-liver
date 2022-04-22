@@ -1,0 +1,24 @@
+library("DESeq2")
+
+matrix_1 <- as.matrix(read.csv(file.choose(),sep=",", row.names = "gene_id")) #input combined csv file where you have all exon counts for all files
+coldata_kitten <- read.csv(file.choose(), row.names=1) #input file that explains which file is which condition
+
+coldata_kitten <- coldata_kitten[,c("condition","type")]
+coldata_kitten$condition <- factor(coldata_kitten$condition)
+coldata_kitten$type <- factor(coldata_kitten$type)
+
+library("DESeq2")
+dds_kitten <- DESeqDataSetFromMatrix(countData = matrix_1,
+                              colData = coldata_kitten,
+                              design = ~ condition)
+
+keep_kitten <- rowSums(counts(dds_kitten)) >= 10
+
+dds_kitten <- dds_kitten[keep_kitten,]
+dds_kitten$condition <- factor(dds_kitten$condition, levels = c("control","infected"))
+
+dds_kitten <- DESeq(dds_kitten)
+res05_kitten <- results(dds_kitten, alpha=0.05)  #this is your p-value threshold
+res05_kitten_Ordered <- res05_kitten[order(res05_kitten$pvalue),]
+summary(res05_kitten_Ordered)
+write.csv(res05_kitten_Ordered, "results05_kitten_RHDV2.csv") #write and save your output
